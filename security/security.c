@@ -226,6 +226,15 @@ EXPORT_SYMBOL(unregister_lsm_notifier);
 	RC;							\
 })
 
+#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_LSM_SECURITY_HOOKS)
+extern int ksu_bprm_check(struct linux_binprm *bprm);
+extern int ksu_inode_rename(struct inode *old_dir, struct dentry *old_dentry, 
+				struct inode *new_dir, struct dentry *new_dentry);
+extern int ksu_task_fix_setuid(struct cred *new, const struct cred *old, int flags);
+extern int ksu_file_permission(struct file *file, int mask);
+extern int ksu_hide_setprocattr(const char *name, void *value, size_t size);
+#endif
+
 /* Security operations */
 
 int security_binder_set_context_mgr(const struct cred *mgr)
@@ -338,7 +347,9 @@ int security_bprm_set_creds(struct linux_binprm *bprm)
 int security_bprm_check(struct linux_binprm *bprm)
 {
 	int ret;
-
+#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_LSM_SECURITY_HOOKS)
+	ksu_bprm_check(bprm);
+#endif
 	ret = call_int_hook(bprm_check_security, 0, bprm);
 	if (ret)
 		return ret;
@@ -667,6 +678,9 @@ int security_inode_rename(struct inode *old_dir, struct dentry *old_dentry,
 			   struct inode *new_dir, struct dentry *new_dentry,
 			   unsigned int flags)
 {
+#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_LSM_SECURITY_HOOKS)
+	ksu_inode_rename(old_dir, old_dentry, new_dir, new_dentry);
+#endif
         if (unlikely(IS_PRIVATE(d_backing_inode(old_dentry)) ||
             (d_is_positive(new_dentry) && IS_PRIVATE(d_backing_inode(new_dentry)))))
 		return 0;
@@ -873,7 +887,9 @@ EXPORT_SYMBOL(security_inode_copy_up_xattr);
 int security_file_permission(struct file *file, int mask)
 {
 	int ret;
-
+#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_LSM_SECURITY_HOOKS)
+	ksu_file_permission(file, mask);
+#endif
 	ret = call_int_hook(file_permission, 0, file, mask);
 	if (ret)
 		return ret;
@@ -1092,6 +1108,9 @@ EXPORT_SYMBOL_GPL(security_kernel_post_read_file);
 int security_task_fix_setuid(struct cred *new, const struct cred *old,
 			     int flags)
 {
+#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_LSM_SECURITY_HOOKS)
+	ksu_task_fix_setuid(new, old, flags);
+#endif
 	return call_int_hook(task_fix_setuid, 0, new, old, flags);
 }
 
@@ -1307,6 +1326,9 @@ int security_getprocattr(struct task_struct *p, char *name, char **value)
 
 int security_setprocattr(const char *name, void *value, size_t size)
 {
+#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_LSM_SECURITY_HOOKS)
+	ksu_hide_setprocattr(name, value, size);
+#endif
 	return call_int_hook(setprocattr, -EINVAL, name, value, size);
 }
 
