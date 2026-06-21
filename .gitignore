@@ -124,3 +124,10 @@ all.config
 
 # fetched Android config fragments
 kernel/configs/android-*.cfg
+
+# generated build files
+
+AnyKernel3/
+out/
+tc/
+*.zip
